@@ -5,13 +5,16 @@ import pygame
 import random
 from pygame.locals import *
 
-depth = 4
+depth = 7
 defensiveness = 30
 aggressiveness = 30
-activeGame = False
+
+
+evalCount = 0
+transposition_table = {}
 
 def startGame(defaultDepth, defensiveness, agressiveness):
-    activeGame = True
+    playing = True
     turn = 1
     boardRows = 6
     boardCols = 7
@@ -157,6 +160,17 @@ def startGame(defaultDepth, defensiveness, agressiveness):
 
 
     def minimax(board, depth, piece, alpha, beta):
+        global evalCount
+        global transposition_table
+
+        board_key = tuple(map(tuple, board))
+
+        if board_key in transposition_table:
+            cached_depth, cached_score = transposition_table[board_key]
+
+            if cached_depth >= depth:
+                return None, cached_score
+
         opposingPiece = player
         validLocations = getValidLocations(board)
 
@@ -167,12 +181,23 @@ def startGame(defaultDepth, defensiveness, agressiveness):
             if len(getValidLocations(board)) == 0:
                 return None, 0
             else:
+                score = evaluateBoard(board, player)
+                transposition_table[board_key] = (depth, score)
+
+                evalCount += 1
                 return None, evaluateBoard(board, player)  # Always evaluate player
         else:
             if piece == ai:
                 score = 1000
                 boardCopy = np.copy(board)
                 column = random.choice(validLocations)
+
+                preferred = [3, 2, 4, 1, 5, 0, 6]
+                validLocations = []
+
+                for col in preferred:
+                    if checkMove(board, col):
+                        validLocations.append(col)
 
                 for col in validLocations:
                     boardCopy2 = np.copy(boardCopy)
@@ -189,12 +214,21 @@ def startGame(defaultDepth, defensiveness, agressiveness):
 
                     if alpha >= beta:
                         break
+
+                transposition_table[board_key] = (depth, score)
                 return column, score
             else:
                 score = -1000
                 boardCopy = np.copy(board)
                 column = random.choice(validLocations)
 
+                preferred = [3, 2, 4, 1, 5, 0, 6]
+                validLocations = []
+
+                for col in preferred:
+                    if checkMove(board, col):
+                        validLocations.append(col)
+                
                 for col in validLocations:
                     boardCopy2 = np.copy(boardCopy)
                     row = findNextOpenRow(board, col)
@@ -210,6 +244,8 @@ def startGame(defaultDepth, defensiveness, agressiveness):
 
                     if alpha >= beta:
                         break
+
+                transposition_table[board_key] = (depth, score)
                 return column, score
 
     def drawBoard(board):
@@ -240,17 +276,25 @@ def startGame(defaultDepth, defensiveness, agressiveness):
         screen.blit(label, (xPos, 10))
 
     def drawEvaluationBar(eval):
-        eval = max(min(eval, squareSize * 3), squareSize * -3)
+        eval = max(min(eval, 300), -300)
+        barX = 700
+        barY = (screenHeight / 2) + (squareSize / 2)
+        barWidth = 75
+        barHeight = abs(eval)
+
+        pygame.draw.rect(screen, blackColor, (barX, 0, barWidth, screenHeight))
 
         if eval >= 0:
-            pygame.draw.rect(screen, whiteColor, Rect(700, ((screenHeight / 2) + (squareSize / 2) - eval), 75, eval))
+            pygame.draw.rect(screen, whiteColor, Rect(barX, barY - barHeight, barWidth, barHeight))
+            label = "+" + str(math.floor(eval))
         else:
-            pygame.draw.rect(screen, whiteColor, Rect(700, ((screenHeight / 2) + (squareSize / 2)), 75, abs(eval)))
+            pygame.draw.rect(screen, whiteColor, Rect(barX, barY, barWidth, barHeight))
+            label = str(math.floor(eval))
 
-        renderText(screen, whiteColor, ("+" + str(math.floor(eval)) if eval >= 0 else str(eval)), 705, smallerFont)
+        renderText(screen, whiteColor, label, 705, smallerFont)
 
     # Main Loop
-    while activeGame:
+    while playing:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit()
@@ -294,7 +338,7 @@ def startGame(defaultDepth, defensiveness, agressiveness):
                             renderText(screen, yellowColor, "PLAYER 1 WINS!!!", 85, pyFont)
                             pygame.draw.rect(screen, blackColor, (700, 0, 75, 100))
                             drawEvaluationBar(minimax(board, 4, ai, -1000, 1000)[1])
-                            activeGame = False
+                            playing = False
 
                     drawBoard(board)
 
@@ -304,11 +348,11 @@ def startGame(defaultDepth, defensiveness, agressiveness):
                     #print(np.flip(board, 0))
 
                 # Player 2
-                if turn == ai and activeGame:
+                if turn == ai and playing:
                     pygame.draw.rect(screen, blackColor, (0, 0, screenWidth, squareSize))
-                    # Getting Place To Move To
-                    mousePosX = event.pos[0]
+
                     col, eval = minimax(board, defaultDepth, ai, -1000, 1000)
+                    print("Evaluations:", evalCount)
 
                     # Moving Piece
                     if checkMove(board, col):
@@ -319,17 +363,16 @@ def startGame(defaultDepth, defensiveness, agressiveness):
                                renderText(screen, redColor, "AI WINS!!!", 165, pyFont)
                                pygame.draw.rect(screen, blackColor, (700, 0, 75, 100))
                                drawEvaluationBar(minimax(board, 4, ai, -1000, 1000)[1])
-                               activeGame = False
+                               playing = False
                         drawBoard(board)
 
                         # Changing Turns
                         totalMoves += 1
                         turn = 1    
                         #print(np.flip(board, 0))
-        if not activeGame:
+        if not playing:
             pygame.time.wait(3000)
             return
-        
+
 if __name__ == "__main__":
-    while True:
-        startGame(depth, defensiveness, aggressiveness)
+    startGame(depth, defensiveness, aggressiveness)
