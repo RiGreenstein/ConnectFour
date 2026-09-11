@@ -80,19 +80,19 @@ def settings():
         if settingsPage == 1:
             # Skill
             Button2(screen, 30, 200, 400, 2, (255, 255, 255), action="scroll1")
-            pygame.draw.rect(screen, (255, 255, 255), [skill, 200 - 12, 10, 24])
+            pygame.draw.rect(screen, (255, 255, 255), [skill, 200 - 12, 10, 50])
             depth = round((skill / 100 + 0.7), 0)
             renderText(screen, (255, 255, 255), str(depth), 470, 180, 45)
 
             # Defensiveness
             Button2(screen, 30, 350, 400, 2, (255, 255, 255), action="scroll2")
-            pygame.draw.rect(screen, (255, 255, 255), [defensiveness, 350 - 12, 10, 24])
+            pygame.draw.rect(screen, (255, 255, 255), [defensiveness, 350 - 12, 10, 50])
             outputDefensiveness = round((defensiveness / 100 + 0.7), 0)
             renderText(screen, (255, 255, 255), str(outputDefensiveness), 470, 330, 45)
 
             # Agressiveness
             Button2(screen, 30, 500, 400, 2, (255, 255, 255), action="scroll3")
-            pygame.draw.rect(screen, (255, 255, 255), [aggressiveness, 500 - 12, 10, 24])
+            pygame.draw.rect(screen, (255, 255, 255), [aggressiveness, 500 - 12, 10, 50])
             outputAggressiveness = round((aggressiveness / 100 + 0.7), 0)
             renderText(screen, (255, 255, 255), str(outputAggressiveness), 470, 480, 45)
         elif settingsPage == 2:
@@ -159,6 +159,8 @@ def mainMenu():
                     sys.exit()
 
         pygame.display.update()
+        pygame.time.Clock.tick(60)
 
 
-mainMenu()
+if __name__ == "__main__":
+    mainMenu()
